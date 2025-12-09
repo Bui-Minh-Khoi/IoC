@@ -14,7 +14,8 @@ This Terraform configuration creates:
 1. **Azure CLI** installed and configured
 2. **Terraform** >= 1.0 installed
 3. **Azure AD permissions** to create users and groups
-4. **Azure subscription** (optional, for some resources)
+4. **Azure AD Tenant ID** (subscription NOT required for Entra ID resources)
+5. **Azure Storage Account** (optional, for remote state backend - recommended for production)
 
 ## Setup
 
@@ -24,9 +25,22 @@ This Terraform configuration creates:
    ```
 
 2. **Configure your Azure credentials:**
+
+   **Option A: Automated Setup (Recommended)**
+   ```bash
+   # Run the setup script to automatically fetch credentials
+   ./scripts/setup-azure-credentials.sh
+   ```
+   This script will:
+   - Get your Azure AD Tenant ID
+   - Create a service principal for GitHub Actions
+   - Generate credentials in the required format
+   - Optionally create `terraform.tfvars` file
+
+   **Option B: Manual Setup**
    ```bash
    az login
-   az account show  # Get your tenant ID and subscription ID
+   az account show  # Get your tenant ID (subscription ID not needed)
    ```
 
 3. **Create terraform.tfvars file:**
@@ -35,10 +49,38 @@ This Terraform configuration creates:
    ```
    
    Edit `terraform.tfvars` and add your:
-   - `tenant_id`: Your Azure AD Tenant ID
-   - `subscription_id`: Your Azure Subscription ID (optional)
+   - `tenant_id`: Your Azure AD Tenant ID (required)
+   
+   **Note:** Azure Subscription ID is NOT required for managing Entra ID (Azure AD) users and groups. Only the Tenant ID is needed.
 
-4. **Update user information:**
+4. **Configure Terraform Backend (Recommended for Production):**
+   
+   **Option A: Automated Setup**
+   ```bash
+   # Create Azure Storage Account for state backend
+   ./scripts/setup-backend-storage.sh
+   ```
+   This script will:
+   - Create an Azure Storage Account
+   - Create a container for state files
+   - Generate backend configuration
+   - Enable versioning and soft delete for state protection
+   
+   **Option B: Manual Setup**
+   ```bash
+   # Copy the example backend configuration
+   cp backend.tf.example backend.tf
+   # Edit backend.tf with your storage account details
+   ```
+   
+   **Why use remote state?**
+   - Secure, encrypted state storage
+   - State locking prevents concurrent modifications
+   - Version history and backup capabilities
+   - Support for multiple tenants/environments
+   - Better than storing state in public GitHub repositories
+
+5. **Update user information:**
    Edit `users.json` to add/modify users with their:
    - `name`: User principal name (email format)
    - `password`: Initial password (users will be forced to change on first login)
@@ -79,21 +121,41 @@ This repository includes GitHub Actions workflows for automated Terraform operat
    - Performs `terraform plan` and `terraform apply`
    - Automatically applies changes when code is merged to main
 
-### Required GitHub Secrets
+### Required GitHub Secrets (Only for GitHub Actions)
+
+**Note:** Service principal is ONLY needed if you want to use GitHub Actions. For local Terraform usage, you only need the Tenant ID and `az login`.
 
 Configure the following secrets in your GitHub repository settings:
 
-- `AZURE_TENANT_ID` - Your Azure AD Tenant ID
-- `AZURE_SUBSCRIPTION_ID` - Your Azure Subscription ID
-- `AZURE_CREDENTIALS` - Azure service principal credentials (JSON format)
+- `AZURE_TENANT_ID` - Your Azure AD Tenant ID (required)
+- `AZURE_CREDENTIALS` - Azure AD service principal credentials (JSON format) - **Only needed for GitHub Actions**
 
-To create Azure credentials for GitHub Actions:
+**Quick Setup (Recommended):**
+```bash
+# Use the automated setup script
+# It will ask if you need a service principal for GitHub Actions
+./scripts/setup-azure-credentials.sh
+```
+
+**Manual Setup (GitHub Actions only):**
+```bash
+# Create a service principal with Azure AD permissions
+az ad sp create-for-rbac --name "github-actions-terraform" \
+  --role "User Administrator" \
+  --sdk-auth
+```
+
+Or for more granular permissions, you can assign specific Azure AD roles:
 
 ```bash
-az ad sp create-for-rbac --name "github-actions-terraform" \
-  --role contributor \
-  --scopes /subscriptions/{subscription-id} \
-  --sdk-auth
+# Create service principal
+SP_APP_ID=$(az ad sp create-for-rbac --name "github-actions-terraform" --sdk-auth --query appId -o tsv)
+
+# Assign Azure AD roles (example: User Administrator)
+az role assignment create \
+  --assignee $SP_APP_ID \
+  --role "User Administrator" \
+  --scope "/"
 ```
 
 Copy the JSON output and add it as the `AZURE_CREDENTIALS` secret.
@@ -105,15 +167,61 @@ You can manually trigger the apply workflow from the GitHub Actions tab:
 2. Click "Run workflow"
 3. Select the branch and click "Run workflow"
 
+## Terraform State Management
+
+### Remote State Backend
+
+This repository supports Azure Storage Account as a remote state backend, which provides:
+
+- **Security**: Encrypted state storage with access control
+- **State Locking**: Prevents concurrent modifications
+- **Versioning**: Automatic version history of state files
+- **Multi-Tenant Support**: Use different state keys for different tenants
+
+### Multi-Tenant State Management
+
+For managing multiple tenants, use different state keys:
+
+```
+tenant1/entra-infrastructure.tfstate
+tenant2/entra-infrastructure.tfstate
+prod/entra-infrastructure.tfstate
+staging/entra-infrastructure.tfstate
+```
+
+This allows you to:
+- Manage multiple Azure AD tenants from a single repository
+- Isolate state files per tenant/environment
+- Apply changes independently to each tenant
+
+### Backend Configuration
+
+The backend configuration is stored in `backend.tf` (not committed to git if it contains sensitive info).
+
+Example structure:
+```hcl
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "terraform-state-rg"
+    storage_account_name = "terraformstate"
+    container_name       = "tfstate"
+    key                  = "tenant1/entra-infrastructure.tfstate"
+  }
+}
+```
+
 ## File Structure
 
 - `main.tf` - Main Terraform configuration for Entra ID resources
 - `variables.tf` - Variable definitions
 - `outputs.tf` - Output values
+- `backend.tf.example` - Example backend configuration for remote state
 - `users.json` - User information file (name@domain, password, role)
 - `terraform.tfvars.example` - Example variables file
 - `.gitignore` - Git ignore rules for Terraform files
 - `.github/workflows/` - GitHub Actions workflow files
+- `scripts/setup-azure-credentials.sh` - Automated script to fetch Azure AD credentials
+- `scripts/setup-backend-storage.sh` - Automated script to create Azure Storage Account for state backend
 
 ## Security Notes
 

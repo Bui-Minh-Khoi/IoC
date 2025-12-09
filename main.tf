@@ -6,19 +6,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 2.47"
     }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
   }
 }
 
 provider "azuread" {
-  tenant_id = var.tenant_id
-}
-
-provider "azurerm" {
-  features {}
   tenant_id = var.tenant_id
 }
 

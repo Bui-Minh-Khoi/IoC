@@ -1,0 +1,38 @@
+# Terraform Backend Configuration Example
+# Copy this file to backend.tf and configure with your Azure Storage Account details
+# 
+# This configuration stores Terraform state in Azure Storage Account, which provides:
+# - Secure, encrypted state storage
+# - State locking to prevent concurrent modifications
+# - Version history and backup capabilities
+# - Support for multiple tenants/environments
+
+terraform {
+  backend "azurerm" {
+    # Azure Storage Account details
+    resource_group_name  = "terraform-state-rg"        # Resource group containing the storage account
+    storage_account_name = "terraformstate"            # Storage account name (must be globally unique)
+    container_name       = "tfstate"                    # Container name for storing state files
+    key                  = "entra-infrastructure.tfstate" # State file name (use different keys for different tenants/environments)
+    
+    # Optional: Use Azure Key Vault for access key (more secure)
+    # key_vault_key_id = "https://your-keyvault.vault.azure.net/keys/terraform-state-key/version"
+    
+    # Optional: Use SAS token instead of access key
+    # sas_token = "your-sas-token"
+    
+    # Optional: Use managed identity (for GitHub Actions)
+    # use_azuread_auth = true
+    
+    # Optional: Enable state encryption
+    # encryption = true
+  }
+}
+
+# Example for multiple tenants:
+# Use different keys for different tenants:
+# - tenant1: key = "tenant1/entra-infrastructure.tfstate"
+# - tenant2: key = "tenant2/entra-infrastructure.tfstate"
+# - production: key = "prod/entra-infrastructure.tfstate"
+# - staging: key = "staging/entra-infrastructure.tfstate"
+

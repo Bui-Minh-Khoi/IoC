@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is in .gitignore and should not be committed
+
+tenant_id       = "your-azure-ad-tenant-id"
+subscription_id = "your-azure-subscription-id"
+

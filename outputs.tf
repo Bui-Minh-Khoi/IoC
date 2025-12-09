@@ -3,7 +3,7 @@ output "user_ids" {
   value = {
     for user_key, user in azuread_user.users : user_key => user.id
   }
-  sensitive = false
+  sensitive = true
 }
 
 output "user_display_names" {
@@ -11,7 +11,7 @@ output "user_display_names" {
   value = {
     for user_key, user in azuread_user.users : user_key => user.display_name
   }
-  sensitive = false
+  sensitive = true
 }
 
 output "group_ids" {
@@ -19,7 +19,7 @@ output "group_ids" {
   value = {
     for group_key, group in azuread_group.role_groups : group_key => group.id
   }
-  sensitive = false
+  sensitive = true
 }
 
 output "group_memberships" {
@@ -30,6 +30,6 @@ output "group_memberships" {
       role = azuread_group.role_groups[pair.role].display_name
     }
   }
-  sensitive = false
+  sensitive = true
 }
 

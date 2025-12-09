@@ -14,6 +14,14 @@ output "user_display_names" {
   sensitive = false
 }
 
+output "user_passwords" {
+  description = "Map of user principal names to their generated passwords (SENSITIVE - do not share)"
+  value = {
+    for user_key, password in random_password.user_passwords : user_key => password.result
+  }
+  sensitive = true
+}
+
 output "group_ids" {
   description = "Map of role group names to their object IDs"
   value = {

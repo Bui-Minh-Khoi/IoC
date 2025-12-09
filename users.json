@@ -2,7 +2,6 @@
   "users": [
     {
       "name": "john.doe@example.com",
-      "password": "ChangeMe123!",
       "role": "Global Administrator",
       "displayName": "John Doe",
       "givenName": "John",
@@ -10,7 +9,6 @@
     },
     {
       "name": "jane.smith@example.com",
-      "password": "ChangeMe123!",
       "role": "User Administrator",
       "displayName": "Jane Smith",
       "givenName": "Jane",
@@ -18,7 +16,6 @@
     },
     {
       "name": "bob.johnson@example.com",
-      "password": "ChangeMe123!",
       "role": "User",
       "displayName": "Bob Johnson",
       "givenName": "Bob",

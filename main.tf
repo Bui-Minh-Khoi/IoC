@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
@@ -29,6 +33,19 @@ locals {
   users      = local.users_data.users
 }
 
+# Generate random passwords for each user
+resource "random_password" "user_passwords" {
+  for_each = { for user in local.users : user.name => user }
+
+  length           = 16
+  special          = true
+  override_special = "!@#$%&*()-_=+[]{}:?"
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
+}
+
 # Create Azure AD users
 resource "azuread_user" "users" {
   for_each = { for user in local.users : user.name => user }
@@ -37,7 +54,7 @@ resource "azuread_user" "users" {
   display_name        = each.value.displayName
   given_name          = each.value.givenName
   surname             = each.value.surname
-  password            = each.value.password
+  password            = random_password.user_passwords[each.key].result
   force_password_change = true
   account_enabled     = true
 }

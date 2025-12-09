@@ -41,9 +41,10 @@ This Terraform configuration creates:
 4. **Update user information:**
    Edit `users.json` to add/modify users with their:
    - `name`: User principal name (email format)
-   - `password`: Initial password (users will be forced to change on first login)
    - `role`: Role name (will create/assign to a security group)
    - `displayName`, `givenName`, `surname`: User details
+   
+   Note: Passwords are automatically generated securely by Terraform and are not stored in this file.
 
 ## Usage
 
@@ -109,24 +110,32 @@ You can manually trigger the apply workflow from the GitHub Actions tab:
 
 - `main.tf` - Main Terraform configuration for Entra ID resources
 - `variables.tf` - Variable definitions
-- `outputs.tf` - Output values
-- `users.json` - User information file (name@domain, password, role)
+- `outputs.tf` - Output values (includes sensitive password output)
+- `users.json` - User information file (name@domain, role, display name - passwords are auto-generated)
 - `terraform.tfvars.example` - Example variables file
 - `.gitignore` - Git ignore rules for Terraform files
 - `.github/workflows/` - GitHub Actions workflow files
 
 ## Security Notes
 
+✅ **Security Improvements:**
+- Passwords are automatically generated using Terraform's `random_password` resource
+- Each user receives a unique, cryptographically secure 16-character password
+- Passwords meet complexity requirements (lowercase, uppercase, numbers, special characters)
+- Passwords are not stored in version control - they are only available in Terraform state
+
 ⚠️ **Important:**
-- The `users.json` file contains sensitive information (passwords)
-- Consider using Azure Key Vault or Terraform Cloud for password management in production
-- Never commit `terraform.tfvars` or actual passwords to version control
 - Users will be forced to change their password on first login (`force_password_change = true`)
+- Generated passwords can be retrieved using: `terraform output user_passwords`
+- Never commit `terraform.tfvars` or Terraform state files to version control
+- Terraform state files contain sensitive data - store them securely (e.g., Azure Storage with encryption)
+- Consider using Terraform Cloud or Azure Key Vault for enhanced state management in production
 
 ## Outputs
 
 After applying, Terraform will output:
 - User IDs mapped to their principal names
 - User display names
+- Generated passwords (sensitive - use `terraform output user_passwords` to view)
 - Group IDs for each role
 - User-to-role group memberships

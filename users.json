@@ -1,0 +1,29 @@
+{
+  "users": [
+    {
+      "name": "john.doe@example.com",
+      "password": "ChangeMe123!",
+      "role": "Global Administrator",
+      "displayName": "John Doe",
+      "givenName": "John",
+      "surname": "Doe"
+    },
+    {
+      "name": "jane.smith@example.com",
+      "password": "ChangeMe123!",
+      "role": "User Administrator",
+      "displayName": "Jane Smith",
+      "givenName": "Jane",
+      "surname": "Smith"
+    },
+    {
+      "name": "bob.johnson@example.com",
+      "password": "ChangeMe123!",
+      "role": "User",
+      "displayName": "Bob Johnson",
+      "givenName": "Bob",
+      "surname": "Johnson"
+    }
+  ]
+}
+

@@ -62,6 +62,49 @@ This Terraform configuration creates:
    terraform destroy
    ```
 
+## GitHub Actions Automation
+
+This repository includes GitHub Actions workflows for automated Terraform operations:
+
+### Workflows
+
+1. **Terraform Plan** (`.github/workflows/terraform-plan.yml`)
+   - Runs on pull requests to `main` branch
+   - Performs `terraform fmt`, `terraform init`, `terraform validate`, and `terraform plan`
+   - Comments the plan output on the PR
+   - Uploads the plan as an artifact
+
+2. **Terraform Apply** (`.github/workflows/terraform-apply.yml`)
+   - Runs on pushes to `main` branch or manual trigger
+   - Performs `terraform plan` and `terraform apply`
+   - Automatically applies changes when code is merged to main
+
+### Required GitHub Secrets
+
+Configure the following secrets in your GitHub repository settings:
+
+- `AZURE_TENANT_ID` - Your Azure AD Tenant ID
+- `AZURE_SUBSCRIPTION_ID` - Your Azure Subscription ID
+- `AZURE_CREDENTIALS` - Azure service principal credentials (JSON format)
+
+To create Azure credentials for GitHub Actions:
+
+```bash
+az ad sp create-for-rbac --name "github-actions-terraform" \
+  --role contributor \
+  --scopes /subscriptions/{subscription-id} \
+  --sdk-auth
+```
+
+Copy the JSON output and add it as the `AZURE_CREDENTIALS` secret.
+
+### Manual Workflow Trigger
+
+You can manually trigger the apply workflow from the GitHub Actions tab:
+1. Go to Actions → Terraform Apply
+2. Click "Run workflow"
+3. Select the branch and click "Run workflow"
+
 ## File Structure
 
 - `main.tf` - Main Terraform configuration for Entra ID resources
@@ -70,6 +113,7 @@ This Terraform configuration creates:
 - `users.json` - User information file (name@domain, password, role)
 - `terraform.tfvars.example` - Example variables file
 - `.gitignore` - Git ignore rules for Terraform files
+- `.github/workflows/` - GitHub Actions workflow files
 
 ## Security Notes
 

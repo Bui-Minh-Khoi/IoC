@@ -1,0 +1,72 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - 'users.json'
+      - '.github/workflows/terraform-apply.yml'
+  workflow_dispatch:
+
+env:
+  TF_VERSION: '1.6.0'
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure Azure credentials
+        uses: azure/login@v2
+        with:
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: terraform init
+        env:
+          TF_INPUT: false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_INPUT: false
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -no-color tfplan
+        env:
+          TF_INPUT: false
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Apply (Manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: terraform apply -auto-approve -no-color tfplan
+        env:
+          TF_INPUT: false
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+

@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is in .gitignore and should not be committed
+# Note: Only tenant_id is required for Azure AD (Entra ID) resources
+# Subscription ID is NOT needed for managing Entra ID users and groups
+
+tenant_id = "your-azure-ad-tenant-id"
+
